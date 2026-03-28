@@ -1,0 +1,8 @@
+.pricing-card-1 {
+	background: linear-gradient(
+		135deg,
+		rgba(255, 255, 255, 0.3) 0%,
+		rgba(255, 255, 255, 0) 100%
+	);
+	opacity: 1;
+}

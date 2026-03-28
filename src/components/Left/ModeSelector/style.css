@@ -1,0 +1,33 @@
+.section-header {
+    display: flex;
+    /* Align text and line horizontally */
+    align-items: center;
+    /* Vertically center the text and line */
+    width: 100%;
+    /* Ensure it spans the container */
+    margin-bottom: 8px;
+    /* Space between header and content */
+}
+
+.section-header h3 {
+    flex-shrink: 0;
+    /* Prevent text from shrinking */
+    text-transform: uppercase;
+    /* Optional: Make text uppercase */
+    letter-spacing: 0.5px;
+    /* Slight letter spacing for elegance */
+}
+
+.section-header hr {
+    flex-grow: 1;
+    /* Allow the line to fill available space */
+    height: 1px;
+    /* Set line thickness */
+    background-color: #d1d5db;
+    /* Light gray color */
+    border: none;
+    /* Remove default border */
+}
+
+
+ 

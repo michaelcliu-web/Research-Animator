@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	/* Remove number input spinners */
+	input[type="number"] {
+		-moz-appearance: textfield;
+	}
+	
+	input[type="number"]::-webkit-outer-spin-button,
+	input[type="number"]::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
+
+	/* Smooth scrolling */
+	html {
+		scroll-behavior: smooth;
+	}
+
+	/* Better focus outlines */
+	*:focus-visible {
+		outline: 2px solid #3b82f6;
+		outline-offset: 2px;
+		border-radius: 4px;
+	}
+
+	/* Improve button and input interactions */
+	button, input, select, textarea {
+		transition: all 0.2s ease;
+	}
+
+	/* Better text rendering */
+	* {
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		text-rendering: optimizeLegibility;
+	}
+}
+
+html {
+	font-family: "Inter", sans-serif;
+	overscroll-behavior: none;
+	overflow-y: auto;
+}
+
+body {
+	font-family: "Inter", sans-serif;
+	overflow-x: hidden;
+	overflow-y: auto;
+	min-height: 100vh;
+
+	/* Enable full screen layout on iOS */
+	padding-bottom: env(safe-area-inset-bottom);
+	padding-top: env(safe-area-inset-top);
+	padding-left: env(safe-area-inset-left);
+	padding-right: env(safe-area-inset-right);
+}
+
+
+
+
+
+
+
+
+/* Better mobile touch targets */
+@media (max-width: 768px) {
+	button, .clickable {
+		min-height: 44px;
+		min-width: 44px;
+	}
+}
+

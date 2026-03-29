@@ -9,9 +9,9 @@ const cookies = new Cookies();
 const STAGES = [
   { key: "parsing_pdf", label: "Reading paper" },
   { key: "summarizing", label: "Understanding & simplifying" },
-  { key: "generating_animation", label: "Creating animation code" },
-  { key: "rendering", label: "Rendering video" },
-  { key: "generating_narration", label: "Adding narration" },
+  { key: "generating_storyboard", label: "Planning scenes" },
+  { key: "processing_scene", label: "Animating scenes" },
+  { key: "concatenating", label: "Assembling video" },
   { key: "done", label: "Result" },
 ];
 
@@ -103,13 +103,19 @@ const EXAMPLE_PAPERS = [
   { file: "science.239.4843.992.pdf", title: "High-Temp Superconductors", authors: "Wu et al., 1987" },
 ];
 
-const DashboardView = ({ stage, pdfUrl, streamingText, streamingCode, videoUrl, summary, onReset, onFileSelect, uploading }) => {
+const DashboardView = ({ stage, pdfUrl, streamingText, streamingCode, videoUrl, summary, keyTakeaways, quiz, suggestedPapers, onReset, onFileSelect, uploading, skillLevel, setSkillLevel }) => {
   const textEndRef = useRef(null);
   const codeEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const [showPaperModal, setShowPaperModal] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [loadingExample, setLoadingExample] = useState(null);
+  const [takeawaysOpen, setTakeawaysOpen] = useState(true);
+  const [quizOpen, setQuizOpen] = useState(true);
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [suggestedOpen, setSuggestedOpen] = useState(true);
+
+  useEffect(() => { setQuizAnswers({}); }, [quiz]);
 
   const handleExampleClick = async (paper) => {
     if (uploading || loadingExample) return;
@@ -137,11 +143,10 @@ const DashboardView = ({ stage, pdfUrl, streamingText, streamingCode, videoUrl, 
   const isIdle = !stage;
   const showPdf = stage === "parsing_pdf";
   const showSummary = stage === "summarizing" || stage === "summarizing_done" ||
-    stage === "generating_animation" || stage === "generating_animation_done" ||
-    stage === "rendering" || stage === "generating_narration" || stage === "done";
-  const showCode = stage === "generating_animation" || stage === "generating_animation_done" ||
-    stage === "rendering" || stage === "generating_narration" || stage === "done";
-  const showSpinner = stage === "rendering" || stage === "generating_narration";
+    stage === "generating_storyboard" || stage === "processing_scene" ||
+    stage === "concatenating" || stage === "done";
+  const showCode = false;
+  const showSpinner = stage === "processing_scene" || stage === "concatenating";
   const showResult = stage === "done";
 
   const handleDrop = useCallback((e) => {
@@ -185,6 +190,29 @@ const DashboardView = ({ stage, pdfUrl, streamingText, streamingCode, videoUrl, 
         </div>
 
         {isIdle && (<>
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-medium text-gray-500">Explanation level</span>
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
+              {[
+                { value: "5th_grade", label: "5th Grade" },
+                { value: "10th_grade", label: "10th Grade" },
+                { value: "college", label: "College+" },
+              ].map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => setSkillLevel(value)}
+                  className={`px-4 py-1.5 transition-colors ${
+                    skillLevel === value
+                      ? "bg-indigo-600 text-white font-semibold"
+                      : "bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div
             onClick={() => !uploading && fileInputRef.current?.click()}
             onDrop={handleDrop}
@@ -314,6 +342,156 @@ const DashboardView = ({ stage, pdfUrl, streamingText, streamingCode, videoUrl, 
                 Generate another
               </button>
             </div>
+          </motion.div>
+        )}
+
+        {keyTakeaways && keyTakeaways.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4"
+          >
+            <button
+              onClick={() => setTakeawaysOpen(o => !o)}
+              className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors"
+            >
+              <span className="font-semibold text-gray-900 text-sm">Key Takeaways</span>
+              <svg
+                className={`w-4 h-4 text-gray-400 transition-transform ${takeawaysOpen ? "rotate-180" : ""}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {takeawaysOpen && (
+              <div className="px-5 pb-5 space-y-3">
+                {keyTakeaways.map((item, i) => (
+                  <div key={i} className="flex gap-3">
+                    <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">
+                      {i + 1}
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">{item.term}</p>
+                      <p className="text-sm text-gray-500 mt-0.5">{item.definition}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {quiz && quiz.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4"
+          >
+            <button
+              onClick={() => setQuizOpen(o => !o)}
+              className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors"
+            >
+              <span className="font-semibold text-gray-900 text-sm">Knowledge Check</span>
+              <div className="flex items-center gap-2">
+                {Object.keys(quizAnswers).length === quiz.length && (
+                  <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                    {Object.entries(quizAnswers).filter(([i, a]) => a === quiz[i].answer).length}/{quiz.length} correct
+                  </span>
+                )}
+                <svg
+                  className={`w-4 h-4 text-gray-400 transition-transform ${quizOpen ? "rotate-180" : ""}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </button>
+            {quizOpen && (
+              <div className="px-5 pb-5 space-y-5">
+                {quiz.map((q, qi) => {
+                  const selected = quizAnswers[qi];
+                  const answered = selected !== undefined;
+                  return (
+                    <div key={qi}>
+                      <p className="text-sm font-medium text-gray-800 mb-2">{qi + 1}. {q.question}</p>
+                      <div className="space-y-1.5">
+                        {q.options.map((opt, oi) => {
+                          const isCorrect = oi === q.answer;
+                          const isSelected = selected === oi;
+                          let cls = "w-full text-left text-sm px-3 py-2 rounded-lg border transition-colors ";
+                          if (!answered) {
+                            cls += "border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 text-gray-700";
+                          } else if (isCorrect) {
+                            cls += "border-green-400 bg-green-50 text-green-800 font-medium";
+                          } else if (isSelected) {
+                            cls += "border-red-300 bg-red-50 text-red-700";
+                          } else {
+                            cls += "border-gray-100 text-gray-400";
+                          }
+                          return (
+                            <button key={oi} className={cls} disabled={answered}
+                              onClick={() => setQuizAnswers(prev => ({ ...prev, [qi]: oi }))}>
+                              {opt}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {answered && (
+                        <p className="mt-2 text-xs text-gray-500 italic">{q.explanation}</p>
+                      )}
+                    </div>
+                  );
+                })}
+                {Object.keys(quizAnswers).length === quiz.length && (
+                  <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+                    <span className="text-sm text-gray-600">
+                      Score: <span className="font-semibold text-indigo-600">{Object.entries(quizAnswers).filter(([i, a]) => a === quiz[i].answer).length}/{quiz.length}</span>
+                    </span>
+                    <button
+                      onClick={() => setQuizAnswers({})}
+                      className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                    >Retry</button>
+                  </div>
+                )}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {suggestedPapers && suggestedPapers.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4"
+          >
+            <button
+              onClick={() => setSuggestedOpen(o => !o)}
+              className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors"
+            >
+              <span className="font-semibold text-gray-900 text-sm">Read Next</span>
+              <svg
+                className={`w-4 h-4 text-gray-400 transition-transform ${suggestedOpen ? "rotate-180" : ""}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {suggestedOpen && (
+              <div className="px-5 pb-5 space-y-3">
+                {suggestedPapers.map((p, i) => (
+                  <div key={i} className="flex gap-3">
+                    <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">
+                      {i + 1}
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">{p.title}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{p.authors}{p.year ? ` · ${p.year}` : ""}</p>
+                      <p className="text-sm text-gray-500 mt-1">{p.reason}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
         )}
 
@@ -543,6 +721,12 @@ const ReelItem = ({ video, isVisible, socket }) => {
   const chatBodyRef = useRef(null);
   const [muted, setMuted] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [takeawaysOpen, setTakeawaysOpen] = useState(false);
+  const [quizOpen, setQuizOpen] = useState(false);
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [suggestedOpen, setSuggestedOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -617,6 +801,135 @@ const ReelItem = ({ video, isVisible, socket }) => {
 
   return (
     <div className="flex items-center gap-3 justify-center">
+      {takeawaysOpen && video.key_takeaways && video.key_takeaways.length > 0 && (
+        <div
+          className="flex flex-col bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden flex-shrink-0"
+          style={{ width: "300px", height: "min(580px, 70vh)" }}
+          onWheel={(e) => e.stopPropagation()}
+        >
+          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-gray-800">Key Takeaways</h4>
+            <button onClick={() => setTakeawaysOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+            {video.key_takeaways.map((item, i) => (
+              <div key={i} className="flex gap-3">
+                <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">
+                  {i + 1}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">{item.term}</p>
+                  <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{item.definition}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {quizOpen && video.quiz && video.quiz.length > 0 && (
+        <div
+          className="flex flex-col bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden flex-shrink-0"
+          style={{ width: "300px", height: "min(580px, 70vh)" }}
+          onWheel={(e) => e.stopPropagation()}
+        >
+          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between flex-shrink-0">
+            <h4 className="text-sm font-semibold text-gray-800">Knowledge Check</h4>
+            <div className="flex items-center gap-2">
+              {Object.keys(quizAnswers).length === video.quiz.length && (
+                <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                  {Object.entries(quizAnswers).filter(([i, a]) => a === video.quiz[i].answer).length}/{video.quiz.length}
+                </span>
+              )}
+              <button onClick={() => setQuizOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-5">
+            {video.quiz.map((q, qi) => {
+              const selected = quizAnswers[qi];
+              const answered = selected !== undefined;
+              return (
+                <div key={qi}>
+                  <p className="text-sm font-medium text-gray-800 mb-2">{qi + 1}. {q.question}</p>
+                  <div className="space-y-1.5">
+                    {q.options.map((opt, oi) => {
+                      const isCorrect = oi === q.answer;
+                      const isSelected = selected === oi;
+                      let cls = "w-full text-left text-xs px-3 py-2 rounded-lg border transition-colors ";
+                      if (!answered) {
+                        cls += "border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 text-gray-700";
+                      } else if (isCorrect) {
+                        cls += "border-green-400 bg-green-50 text-green-800 font-medium";
+                      } else if (isSelected) {
+                        cls += "border-red-300 bg-red-50 text-red-700";
+                      } else {
+                        cls += "border-gray-100 text-gray-400";
+                      }
+                      return (
+                        <button key={oi} className={cls} disabled={answered}
+                          onClick={() => setQuizAnswers(prev => ({ ...prev, [qi]: oi }))}>
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {answered && (
+                    <p className="mt-1.5 text-xs text-gray-500 italic">{q.explanation}</p>
+                  )}
+                </div>
+              );
+            })}
+            {Object.keys(quizAnswers).length === video.quiz.length && (
+              <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-xs text-gray-600">
+                  Score: <span className="font-semibold text-indigo-600">{Object.entries(quizAnswers).filter(([i, a]) => a === video.quiz[i].answer).length}/{video.quiz.length}</span>
+                </span>
+                <button onClick={() => setQuizAnswers({})} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Retry</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {suggestedOpen && video.suggested_papers && video.suggested_papers.length > 0 && (
+        <div
+          className="flex flex-col bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden flex-shrink-0"
+          style={{ width: "300px", height: "min(580px, 70vh)" }}
+          onWheel={(e) => e.stopPropagation()}
+        >
+          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between flex-shrink-0">
+            <h4 className="text-sm font-semibold text-gray-800">Read Next</h4>
+            <button onClick={() => setSuggestedOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+            {video.suggested_papers.map((p, i) => (
+              <div key={i} className="flex gap-3">
+                <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">
+                  {i + 1}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800 leading-snug">{p.title}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{p.authors}{p.year ? ` · ${p.year}` : ""}</p>
+                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">{p.reason}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div
         className="relative bg-black rounded-xl overflow-hidden cursor-pointer flex-shrink-0"
         style={{ width: "360px", aspectRatio: "9/16" }}
@@ -630,7 +943,28 @@ const ReelItem = ({ video, isVisible, socket }) => {
           playsInline
           preload="auto"
           className="w-full h-full object-contain"
+          onTimeUpdate={(e) => setCurrentTime(e.target.currentTime)}
+          onLoadedMetadata={(e) => setDuration(e.target.duration)}
         />
+
+        <div
+          className="absolute bottom-16 left-0 right-0 px-3"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <input
+            type="range"
+            min={0}
+            max={duration || 1}
+            step={0.1}
+            value={currentTime}
+            onChange={(e) => {
+              const t = parseFloat(e.target.value);
+              if (videoRef.current) videoRef.current.currentTime = t;
+              setCurrentTime(t);
+            }}
+            className="w-full h-1 accent-white cursor-pointer"
+          />
+        </div>
 
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none">
           <h3 className="text-white font-bold text-sm drop-shadow-lg">
@@ -682,8 +1016,47 @@ const ReelItem = ({ video, isVisible, socket }) => {
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
         </a>
+        {video.key_takeaways && video.key_takeaways.length > 0 && (
+          <button
+            onClick={() => { setTakeawaysOpen((o) => !o); setChatOpen(false); setQuizOpen(false); setSuggestedOpen(false); }}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+              takeawaysOpen ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+            title="Key takeaways"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+          </button>
+        )}
+        {video.quiz && video.quiz.length > 0 && (
+          <button
+            onClick={() => { setQuizOpen((o) => !o); setTakeawaysOpen(false); setChatOpen(false); setSuggestedOpen(false); }}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+              quizOpen ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+            title="Knowledge check"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </button>
+        )}
+        {video.suggested_papers && video.suggested_papers.length > 0 && (
+          <button
+            onClick={() => { setSuggestedOpen((o) => !o); setTakeawaysOpen(false); setQuizOpen(false); setChatOpen(false); }}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+              suggestedOpen ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+            title="Read next"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          </button>
+        )}
         <button
-          onClick={() => setChatOpen((o) => !o)}
+          onClick={() => { setChatOpen((o) => !o); setTakeawaysOpen(false); setQuizOpen(false); setSuggestedOpen(false); }}
           className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
             chatOpen ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
@@ -699,6 +1072,7 @@ const ReelItem = ({ video, isVisible, socket }) => {
         <div
           className="flex flex-col bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden flex-shrink-0"
           style={{ width: "340px", height: "min(580px, 70vh)" }}
+          onWheel={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
           <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
@@ -891,6 +1265,10 @@ const Content = ({ socket, selectedMode, getToken }) => {
   const [streamingCode, setStreamingCode] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [summary, setSummary] = useState("");
+  const [keyTakeaways, setKeyTakeaways] = useState([]);
+  const [quiz, setQuiz] = useState([]);
+  const [suggestedPapers, setSuggestedPapers] = useState([]);
+  const [skillLevel, setSkillLevel] = useState("college");
 
   const handleSocketMessage = useCallback((event) => {
     try {
@@ -901,6 +1279,9 @@ const Content = ({ socket, selectedMode, getToken }) => {
       if (data.status === "DONE") {
         setVideoUrl(data.video_url);
         setSummary(data.summary || "");
+        setKeyTakeaways(data.key_takeaways || []);
+        setQuiz(data.quiz || []);
+        setSuggestedPapers(data.suggested_papers || []);
         setStage("done");
       } else if (data.status === "error") {
         setStage("");
@@ -913,13 +1294,14 @@ const Content = ({ socket, selectedMode, getToken }) => {
         if (data.chunk) setStreamingText((prev) => prev + data.chunk);
       } else if (data.status === "summarizing_done") {
         setStage("summarizing_done");
-      } else if (data.status === "generating_animation") {
-        setStage("generating_animation");
-        if (data.chunk) setStreamingCode((prev) => prev + data.chunk);
-      } else if (data.status === "generating_animation_done") {
-        setStage("generating_animation_done");
-      } else if (data.status === "generating_narration") {
-        setStage("generating_narration");
+      } else if (data.status === "generating_storyboard") {
+        setStage("generating_storyboard");
+      } else if (data.status === "storyboard_done") {
+        setStage("generating_storyboard");
+      } else if (data.status === "processing_scene") {
+        setStage("processing_scene");
+      } else if (data.status === "concatenating") {
+        setStage("concatenating");
       } else {
         setStage(data.status);
       }
@@ -936,11 +1318,15 @@ const Content = ({ socket, selectedMode, getToken }) => {
 
   const handleFileSelect = async (file) => {
     setUploading(true);
+    setStage("");
     setStreamingText("");
     setStreamingCode("");
     setPdfUrl("");
     setSummary("");
     setVideoUrl("");
+    setKeyTakeaways([]);
+    setQuiz([]);
+    setSuggestedPapers([]);
 
     try {
       const formData = new FormData();
@@ -961,7 +1347,7 @@ const Content = ({ socket, selectedMode, getToken }) => {
       const { paper_id } = res.data;
 
       if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ websocket_type: "generate_video", paper_id }));
+        socket.send(JSON.stringify({ websocket_type: "generate_video", paper_id, skill_level: skillLevel }));
         setStage("parsing_pdf");
       } else {
         toast.error("WebSocket not connected. Please refresh and try again.");
@@ -977,6 +1363,9 @@ const Content = ({ socket, selectedMode, getToken }) => {
   const handleReset = () => {
     setVideoUrl("");
     setSummary("");
+    setKeyTakeaways([]);
+    setQuiz([]);
+    setSuggestedPapers([]);
     setStage("");
     setStreamingText("");
     setStreamingCode("");
@@ -1057,9 +1446,14 @@ const Content = ({ socket, selectedMode, getToken }) => {
       streamingCode={streamingCode}
       videoUrl={videoUrl}
       summary={summary}
+      keyTakeaways={keyTakeaways}
+      quiz={quiz}
+      suggestedPapers={suggestedPapers}
       onReset={handleReset}
       onFileSelect={handleFileSelect}
       uploading={uploading}
+      skillLevel={skillLevel}
+      setSkillLevel={setSkillLevel}
     />
   );
 };

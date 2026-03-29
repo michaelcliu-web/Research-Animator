@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import Spinner from "./components/Spinner";
 import Login from "./components/Login";
 import Content from "./components/Content";
+import Left from "./components/Left";
 import Cookies from "universal-cookie";
 import * as Sentry from "@sentry/react";
 
@@ -14,34 +15,61 @@ const Home = () => {
 
   const [gotToken, setGotToken] = useState(false);
   const [socket, setSocket] = useState(null);
-  const [reconnectSocket, setReconnectSocket] = useState(false);
+  const [selectedMode, setSelectedMode] = useState("dashboard");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  useEffect(() => {
-    if (gotToken) {
-      const token = cookies.get("token");
-      if (token && process.env.REACT_APP_WS_URL) {
-        setSocket(
-          new WebSocket(
-            process.env.REACT_APP_WS_URL + "ws/app/" + "?token=" + token
-          )
-        );
-        setReconnectSocket(!reconnectSocket);
+  const reconnectTimer = useRef(null);
+  const retryDelay = useRef(1000);
+  const unmounted = useRef(false);
+
+  const connectSocket = useCallback(async () => {
+    if (unmounted.current) return;
+    try {
+      const token = await getToken();
+      if (!token || unmounted.current) return;
+      cookies.set("token", token, { path: "/" });
+
+      const ws = new WebSocket(
+        process.env.REACT_APP_WS_URL + "ws/app/?token=" + token
+      );
+
+      ws.onopen = () => {
+        console.log("WebSocket connected");
+        retryDelay.current = 1000;
+      };
+
+      ws.onclose = (e) => {
+        console.log("WebSocket disconnected", e.code);
+        if (!unmounted.current) {
+          setSocket(null);
+          reconnectTimer.current = setTimeout(() => {
+            retryDelay.current = Math.min(retryDelay.current * 2, 15000);
+            connectSocket();
+          }, retryDelay.current);
+        }
+      };
+
+      ws.onerror = () => ws.close();
+
+      setSocket(ws);
+    } catch (error) {
+      Sentry.captureException(error);
+      if (!unmounted.current) {
+        reconnectTimer.current = setTimeout(() => {
+          retryDelay.current = Math.min(retryDelay.current * 2, 15000);
+          connectSocket();
+        }, retryDelay.current);
       }
     }
-  }, [gotToken]);
+  }, [getToken]);
 
   useEffect(() => {
-    if (socket === null) return;
-
-    socket.onopen = () => console.log("WebSocket connected");
-    socket.onclose = (e) => {
-      console.log("WebSocket disconnected", e.code);
-      setSocket(null);
+    unmounted.current = false;
+    return () => {
+      unmounted.current = true;
+      clearTimeout(reconnectTimer.current);
     };
-    socket.onerror = () => socket.close();
-
-    return () => socket.close();
-  }, [reconnectSocket]);
+  }, []);
 
   useEffect(() => {
     if (isSignedIn) {
@@ -56,6 +84,15 @@ const Home = () => {
     }
   }, [isSignedIn]);
 
+  useEffect(() => {
+    if (gotToken && process.env.REACT_APP_WS_URL) {
+      connectSocket();
+    }
+    return () => {
+      clearTimeout(reconnectTimer.current);
+    };
+  }, [gotToken, connectSocket]);
+
   if (!isSignedIn) {
     return <Login />;
   }
@@ -64,7 +101,19 @@ const Home = () => {
     return <Spinner />;
   }
 
-  return <Content socket={socket} />;
+  return (
+    <div className="flex h-screen">
+      <Left
+        selectedMode={selectedMode}
+        setSelectedMode={setSelectedMode}
+        sidebarCollapsed={sidebarCollapsed}
+        setSidebarCollapsed={setSidebarCollapsed}
+      />
+      <div className="flex-1 overflow-y-auto">
+        <Content socket={socket} selectedMode={selectedMode} getToken={getToken} />
+      </div>
+    </div>
+  );
 };
 
 export default Home;

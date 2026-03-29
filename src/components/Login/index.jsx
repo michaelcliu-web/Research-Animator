@@ -22,7 +22,8 @@ const Login = () => {
           {/* Logo */}
           <div className="mb-12">
             <div className="flex items-center justify-center space-x-3 mb-8">
-              <span className="text-2xl font-bold text-gray-900">My App</span>
+              <img src="/reel-research-logo.jpeg" alt="Reel Research" className="w-12 h-12 rounded-xl" />
+              <span className="text-2xl font-bold text-gray-900">Reel Research</span>
             </div>
           </div>
 
@@ -30,7 +31,7 @@ const Login = () => {
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">Welcome!</h1>
             <p className="text-gray-600 text-lg leading-relaxed">
-              Sign in to improve your application
+              Turn research papers into animated short-form videos
             </p>
           </div>
 
@@ -116,12 +117,12 @@ const Login = () => {
               </div>
               <div className="flex-1">
                 <blockquote className="text-gray-700 text-lg font-medium leading-relaxed mb-4">
-                  "A great experience from start to finish."
+                  "Upload a paper, get a narrated animated explainer in minutes. It's like 3Blue1Brown for any research topic."
                 </blockquote>
                 <div className="flex items-center">
                   <div>
-                    <p className="text-gray-800 font-semibold text-sm">- Happy User</p>
-                    <p className="text-gray-500 text-sm">Verified Customer</p>
+                    <p className="text-gray-800 font-semibold text-sm">Reel Research</p>
+                    <p className="text-gray-500 text-sm">AI-powered paper animations</p>
                   </div>
                 </div>
               </div>

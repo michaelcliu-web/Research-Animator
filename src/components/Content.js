@@ -9,11 +9,16 @@ import {
   SKILL_LEVELS,
   examplePaperUrl,
 } from "../config/constants";
+import useQuiz from "../hooks/useQuiz";
+import CollapsibleCard from "./common/CollapsibleCard";
 import LoadingSpinner from "./common/LoadingSpinner";
+import SidePanel from "./common/SidePanel";
+import KeyTakeawaysList from "./study/KeyTakeawaysList";
+import QuizQuestions, { QuizScoreBadge } from "./study/QuizQuestions";
+import ReadNextList from "./study/ReadNextList";
 import {
   BookOpenIcon,
   CheckIcon,
-  ChevronDownIcon,
   ClipboardCheckIcon,
   CloseIcon,
   DocumentIcon,
@@ -29,6 +34,37 @@ import {
   UserIcon,
   VideoCameraIcon,
 } from "./common/Icons";
+
+const hasItems = (list) => Array.isArray(list) && list.length > 0;
+
+const QuizCard = ({ questions }) => {
+  const quiz = useQuiz(questions);
+  return (
+    <CollapsibleCard title="Knowledge Check" headerExtra={<QuizScoreBadge quiz={quiz} label=" correct" />}>
+      <QuizQuestions questions={questions} quiz={quiz} variant="card" />
+    </CollapsibleCard>
+  );
+};
+
+// Quiz state lives in the parent so answers survive closing and reopening the panel.
+const QuizSidePanel = ({ questions, quiz, onClose }) => (
+  <SidePanel title="Knowledge Check" headerExtra={<QuizScoreBadge quiz={quiz} />} onClose={onClose}>
+    <QuizQuestions questions={questions} quiz={quiz} variant="panel" />
+  </SidePanel>
+);
+
+/** Round icon button beside a feed video that opens one of its side panels. */
+const PanelToggleButton = ({ title, isActive, onClick, children }) => (
+  <button
+    onClick={onClick}
+    title={title}
+    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+      isActive ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+    }`}
+  >
+    {children}
+  </button>
+);
 
 const StageIndicator = ({ currentStage }) => {
   const currentIdx = GENERATION_STAGES.findIndex((s) => s.key === currentStage);
@@ -104,12 +140,6 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
   const [showPaperModal, setShowPaperModal] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [loadingExample, setLoadingExample] = useState(null);
-  const [takeawaysOpen, setTakeawaysOpen] = useState(true);
-  const [quizOpen, setQuizOpen] = useState(true);
-  const [quizAnswers, setQuizAnswers] = useState({});
-  const [suggestedOpen, setSuggestedOpen] = useState(true);
-
-  useEffect(() => { setQuizAnswers({}); }, [quiz]);
 
   const handleExampleClick = async (paper) => {
     if (uploading || loadingExample) return;
@@ -318,139 +348,18 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
           </motion.div>
         )}
 
-        {keyTakeaways && keyTakeaways.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4"
-          >
-            <button
-              onClick={() => setTakeawaysOpen(o => !o)}
-              className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors"
-            >
-              <span className="font-semibold text-gray-900 text-sm">Key Takeaways</span>
-              <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${takeawaysOpen ? "rotate-180" : ""}`} />
-            </button>
-            {takeawaysOpen && (
-              <div className="px-5 pb-5 space-y-3">
-                {keyTakeaways.map((item, i) => (
-                  <div key={i} className="flex gap-3">
-                    <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">
-                      {i + 1}
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">{item.term}</p>
-                      <p className="text-sm text-gray-500 mt-0.5">{item.definition}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </motion.div>
+        {keyTakeaways.length > 0 && (
+          <CollapsibleCard title="Key Takeaways">
+            <KeyTakeawaysList takeaways={keyTakeaways} variant="card" />
+          </CollapsibleCard>
         )}
 
-        {quiz && quiz.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4"
-          >
-            <button
-              onClick={() => setQuizOpen(o => !o)}
-              className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors"
-            >
-              <span className="font-semibold text-gray-900 text-sm">Knowledge Check</span>
-              <div className="flex items-center gap-2">
-                {Object.keys(quizAnswers).length === quiz.length && (
-                  <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
-                    {Object.entries(quizAnswers).filter(([i, a]) => a === quiz[i].answer).length}/{quiz.length} correct
-                  </span>
-                )}
-                <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${quizOpen ? "rotate-180" : ""}`} />
-              </div>
-            </button>
-            {quizOpen && (
-              <div className="px-5 pb-5 space-y-5">
-                {quiz.map((q, qi) => {
-                  const selected = quizAnswers[qi];
-                  const answered = selected !== undefined;
-                  return (
-                    <div key={qi}>
-                      <p className="text-sm font-medium text-gray-800 mb-2">{qi + 1}. {q.question}</p>
-                      <div className="space-y-1.5">
-                        {q.options.map((opt, oi) => {
-                          const isCorrect = oi === q.answer;
-                          const isSelected = selected === oi;
-                          let cls = "w-full text-left text-sm px-3 py-2 rounded-lg border transition-colors ";
-                          if (!answered) {
-                            cls += "border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 text-gray-700";
-                          } else if (isCorrect) {
-                            cls += "border-green-400 bg-green-50 text-green-800 font-medium";
-                          } else if (isSelected) {
-                            cls += "border-red-300 bg-red-50 text-red-700";
-                          } else {
-                            cls += "border-gray-100 text-gray-400";
-                          }
-                          return (
-                            <button key={oi} className={cls} disabled={answered}
-                              onClick={() => setQuizAnswers(prev => ({ ...prev, [qi]: oi }))}>
-                              {opt}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {answered && (
-                        <p className="mt-2 text-xs text-gray-500 italic">{q.explanation}</p>
-                      )}
-                    </div>
-                  );
-                })}
-                {Object.keys(quizAnswers).length === quiz.length && (
-                  <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
-                    <span className="text-sm text-gray-600">
-                      Score: <span className="font-semibold text-indigo-600">{Object.entries(quizAnswers).filter(([i, a]) => a === quiz[i].answer).length}/{quiz.length}</span>
-                    </span>
-                    <button
-                      onClick={() => setQuizAnswers({})}
-                      className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
-                    >Retry</button>
-                  </div>
-                )}
-              </div>
-            )}
-          </motion.div>
-        )}
+        {quiz.length > 0 && <QuizCard questions={quiz} />}
 
-        {suggestedPapers && suggestedPapers.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4"
-          >
-            <button
-              onClick={() => setSuggestedOpen(o => !o)}
-              className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors"
-            >
-              <span className="font-semibold text-gray-900 text-sm">Read Next</span>
-              <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${suggestedOpen ? "rotate-180" : ""}`} />
-            </button>
-            {suggestedOpen && (
-              <div className="px-5 pb-5 space-y-3">
-                {suggestedPapers.map((p, i) => (
-                  <div key={i} className="flex gap-3">
-                    <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">
-                      {i + 1}
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">{p.title}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{p.authors}{p.year ? ` · ${p.year}` : ""}</p>
-                      <p className="text-sm text-gray-500 mt-1">{p.reason}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </motion.div>
+        {suggestedPapers.length > 0 && (
+          <CollapsibleCard title="Read Next">
+            <ReadNextList papers={suggestedPapers} variant="card" />
+          </CollapsibleCard>
         )}
 
         {showSummary && (
@@ -636,11 +545,9 @@ const ReelItem = ({ video, isVisible, socket }) => {
   const [paused, setPaused] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [takeawaysOpen, setTakeawaysOpen] = useState(false);
-  const [quizOpen, setQuizOpen] = useState(false);
-  const [quizAnswers, setQuizAnswers] = useState({});
-  const [suggestedOpen, setSuggestedOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
+  // Which side panel is showing: "takeaways" | "quiz" | "readNext" | "chat" | null.
+  const [openPanel, setOpenPanel] = useState(null);
+  const quiz = useQuiz(video.quiz || []);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [answering, setAnswering] = useState(false);
@@ -694,6 +601,9 @@ const ReelItem = ({ video, isVisible, socket }) => {
     return () => socket.removeEventListener("message", handleMessage);
   }, [socket, video.id]);
 
+  const togglePanel = (panel) => setOpenPanel((current) => (current === panel ? null : panel));
+  const closePanel = () => setOpenPanel(null);
+
   const togglePlay = () => {
     if (!isVisible) return;
     setPaused((p) => !p);
@@ -714,127 +624,18 @@ const ReelItem = ({ video, isVisible, socket }) => {
 
   return (
     <div className="flex items-center gap-3 justify-center">
-      {takeawaysOpen && video.key_takeaways && video.key_takeaways.length > 0 && (
-        <div
-          className="flex flex-col bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden flex-shrink-0"
-          style={{ width: "300px", height: "min(580px, 70vh)" }}
-          onWheel={(e) => e.stopPropagation()}
-        >
-          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-gray-800">Key Takeaways</h4>
-            <button onClick={() => setTakeawaysOpen(false)} className="text-gray-400 hover:text-gray-600">
-              <CloseIcon className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-            {video.key_takeaways.map((item, i) => (
-              <div key={i} className="flex gap-3">
-                <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">
-                  {i + 1}
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">{item.term}</p>
-                  <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{item.definition}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {openPanel === "takeaways" && (
+        <SidePanel title="Key Takeaways" onClose={closePanel}>
+          <KeyTakeawaysList takeaways={video.key_takeaways} variant="panel" />
+        </SidePanel>
       )}
 
-      {quizOpen && video.quiz && video.quiz.length > 0 && (
-        <div
-          className="flex flex-col bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden flex-shrink-0"
-          style={{ width: "300px", height: "min(580px, 70vh)" }}
-          onWheel={(e) => e.stopPropagation()}
-        >
-          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between flex-shrink-0">
-            <h4 className="text-sm font-semibold text-gray-800">Knowledge Check</h4>
-            <div className="flex items-center gap-2">
-              {Object.keys(quizAnswers).length === video.quiz.length && (
-                <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
-                  {Object.entries(quizAnswers).filter(([i, a]) => a === video.quiz[i].answer).length}/{video.quiz.length}
-                </span>
-              )}
-              <button onClick={() => setQuizOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <CloseIcon className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-5">
-            {video.quiz.map((q, qi) => {
-              const selected = quizAnswers[qi];
-              const answered = selected !== undefined;
-              return (
-                <div key={qi}>
-                  <p className="text-sm font-medium text-gray-800 mb-2">{qi + 1}. {q.question}</p>
-                  <div className="space-y-1.5">
-                    {q.options.map((opt, oi) => {
-                      const isCorrect = oi === q.answer;
-                      const isSelected = selected === oi;
-                      let cls = "w-full text-left text-xs px-3 py-2 rounded-lg border transition-colors ";
-                      if (!answered) {
-                        cls += "border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 text-gray-700";
-                      } else if (isCorrect) {
-                        cls += "border-green-400 bg-green-50 text-green-800 font-medium";
-                      } else if (isSelected) {
-                        cls += "border-red-300 bg-red-50 text-red-700";
-                      } else {
-                        cls += "border-gray-100 text-gray-400";
-                      }
-                      return (
-                        <button key={oi} className={cls} disabled={answered}
-                          onClick={() => setQuizAnswers(prev => ({ ...prev, [qi]: oi }))}>
-                          {opt}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {answered && (
-                    <p className="mt-1.5 text-xs text-gray-500 italic">{q.explanation}</p>
-                  )}
-                </div>
-              );
-            })}
-            {Object.keys(quizAnswers).length === video.quiz.length && (
-              <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-xs text-gray-600">
-                  Score: <span className="font-semibold text-indigo-600">{Object.entries(quizAnswers).filter(([i, a]) => a === video.quiz[i].answer).length}/{video.quiz.length}</span>
-                </span>
-                <button onClick={() => setQuizAnswers({})} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Retry</button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {openPanel === "quiz" && <QuizSidePanel questions={video.quiz} quiz={quiz} onClose={closePanel} />}
 
-      {suggestedOpen && video.suggested_papers && video.suggested_papers.length > 0 && (
-        <div
-          className="flex flex-col bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden flex-shrink-0"
-          style={{ width: "300px", height: "min(580px, 70vh)" }}
-          onWheel={(e) => e.stopPropagation()}
-        >
-          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between flex-shrink-0">
-            <h4 className="text-sm font-semibold text-gray-800">Read Next</h4>
-            <button onClick={() => setSuggestedOpen(false)} className="text-gray-400 hover:text-gray-600">
-              <CloseIcon className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-            {video.suggested_papers.map((p, i) => (
-              <div key={i} className="flex gap-3">
-                <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">
-                  {i + 1}
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-gray-800 leading-snug">{p.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{p.authors}{p.year ? ` · ${p.year}` : ""}</p>
-                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">{p.reason}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {openPanel === "readNext" && (
+        <SidePanel title="Read Next" onClose={closePanel}>
+          <ReadNextList papers={video.suggested_papers} variant="panel" />
+        </SidePanel>
       )}
 
       <div
@@ -914,51 +715,27 @@ const ReelItem = ({ video, isVisible, socket }) => {
         >
           <DownloadIcon className="w-5 h-5 text-gray-700" />
         </a>
-        {video.key_takeaways && video.key_takeaways.length > 0 && (
-          <button
-            onClick={() => { setTakeawaysOpen((o) => !o); setChatOpen(false); setQuizOpen(false); setSuggestedOpen(false); }}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-              takeawaysOpen ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-            title="Key takeaways"
-          >
+        {hasItems(video.key_takeaways) && (
+          <PanelToggleButton title="Key takeaways" isActive={openPanel === "takeaways"} onClick={() => togglePanel("takeaways")}>
             <ClipboardCheckIcon className="w-5 h-5" />
-          </button>
+          </PanelToggleButton>
         )}
-        {video.quiz && video.quiz.length > 0 && (
-          <button
-            onClick={() => { setQuizOpen((o) => !o); setTakeawaysOpen(false); setChatOpen(false); setSuggestedOpen(false); }}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-              quizOpen ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-            title="Knowledge check"
-          >
+        {hasItems(video.quiz) && (
+          <PanelToggleButton title="Knowledge check" isActive={openPanel === "quiz"} onClick={() => togglePanel("quiz")}>
             <QuizIcon className="w-5 h-5" />
-          </button>
+          </PanelToggleButton>
         )}
-        {video.suggested_papers && video.suggested_papers.length > 0 && (
-          <button
-            onClick={() => { setSuggestedOpen((o) => !o); setTakeawaysOpen(false); setQuizOpen(false); setChatOpen(false); }}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-              suggestedOpen ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-            title="Read next"
-          >
+        {hasItems(video.suggested_papers) && (
+          <PanelToggleButton title="Read next" isActive={openPanel === "readNext"} onClick={() => togglePanel("readNext")}>
             <BookOpenIcon className="w-5 h-5" />
-          </button>
+          </PanelToggleButton>
         )}
-        <button
-          onClick={() => { setChatOpen((o) => !o); setTakeawaysOpen(false); setQuizOpen(false); setSuggestedOpen(false); }}
-          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-            chatOpen ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-          title="Ask about this paper"
-        >
+        <PanelToggleButton title="Ask about this paper" isActive={openPanel === "chat"} onClick={() => togglePanel("chat")}>
           <QuestionIcon className="w-5 h-5" />
-        </button>
+        </PanelToggleButton>
       </div>
 
-      {chatOpen && (
+      {openPanel === "chat" && (
         <div
           className="flex flex-col bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden flex-shrink-0"
           style={{ width: "340px", height: "min(580px, 70vh)" }}
@@ -970,7 +747,7 @@ const ReelItem = ({ video, isVisible, socket }) => {
               <h4 className="text-sm font-semibold text-gray-800">Ask about this paper</h4>
               <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[240px]">{video.title || "Untitled"}</p>
             </div>
-            <button onClick={() => setChatOpen(false)} className="text-gray-400 hover:text-gray-600">
+            <button onClick={closePanel} className="text-gray-400 hover:text-gray-600">
               <CloseIcon className="w-4 h-4" />
             </button>
           </div>

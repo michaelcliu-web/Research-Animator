@@ -1,7 +1,6 @@
 import { useClerk } from "@clerk/clerk-react";
 import Cookies from "universal-cookie";
 import { useState } from "react";
-import "./style.css";
 
 const NavTray = ({ selectedMode, setSelectedMode }) => {
   const { signOut } = useClerk();

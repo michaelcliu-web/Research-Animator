@@ -9,7 +9,9 @@ import {
   SKILL_LEVELS,
   examplePaperUrl,
 } from "../config/constants";
+import usePaperChat from "../hooks/usePaperChat";
 import useQuiz from "../hooks/useQuiz";
+import useVideoLibrary from "../hooks/useVideoLibrary";
 import CollapsibleCard from "./common/CollapsibleCard";
 import LoadingSpinner from "./common/LoadingSpinner";
 import SidePanel from "./common/SidePanel";
@@ -408,40 +410,8 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
 };
 
 const VideoHistory = ({ socket }) => {
-  const [videos, setVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { videos, loading } = useVideoLibrary(socket);
   const [playingVideo, setPlayingVideo] = useState(null);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleMessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.websocket_type === "list_videos") {
-          setVideos(data.videos || []);
-          setLoading(false);
-        }
-      } catch (e) {}
-    };
-
-    const sendRequest = () => {
-      socket.send(JSON.stringify({ websocket_type: "list_videos" }));
-    };
-
-    socket.addEventListener("message", handleMessage);
-
-    if (socket.readyState === WebSocket.OPEN) {
-      sendRequest();
-    } else {
-      socket.addEventListener("open", sendRequest);
-    }
-
-    return () => {
-      socket.removeEventListener("message", handleMessage);
-      socket.removeEventListener("open", sendRequest);
-    };
-  }, [socket]);
 
   const formatDate = (isoString) => {
     const d = new Date(isoString);
@@ -548,9 +518,8 @@ const ReelItem = ({ video, isVisible, socket }) => {
   // Which side panel is showing: "takeaways" | "quiz" | "readNext" | "chat" | null.
   const [openPanel, setOpenPanel] = useState(null);
   const quiz = useQuiz(video.quiz || []);
-  const [messages, setMessages] = useState([]);
+  const { messages, answering, askQuestion } = usePaperChat(socket, video.id);
   const [input, setInput] = useState("");
-  const [answering, setAnswering] = useState(false);
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -565,42 +534,6 @@ const ReelItem = ({ video, isVisible, socket }) => {
     if (chatBodyRef.current) chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
   }, [messages]);
 
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleMessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.websocket_type === "ask_answer" && data.video_id === video.id) {
-          if (data.error) {
-            setMessages((prev) => [...prev, { role: "assistant", text: "Sorry, something went wrong: " + data.error }]);
-            setAnswering(false);
-          } else if (data.status === "streaming" && data.chunk) {
-            setMessages((prev) => {
-              const last = prev[prev.length - 1];
-              if (last && last.role === "assistant" && last.streaming) {
-                return [...prev.slice(0, -1), { ...last, text: last.text + data.chunk }];
-              }
-              return [...prev, { role: "assistant", text: data.chunk, streaming: true }];
-            });
-          } else if (data.status === "done") {
-            setMessages((prev) => {
-              const last = prev[prev.length - 1];
-              if (last && last.role === "assistant") {
-                return [...prev.slice(0, -1), { ...last, streaming: false }];
-              }
-              return prev;
-            });
-            setAnswering(false);
-          }
-        }
-      } catch (e) {}
-    };
-
-    socket.addEventListener("message", handleMessage);
-    return () => socket.removeEventListener("message", handleMessage);
-  }, [socket, video.id]);
-
   const togglePanel = (panel) => setOpenPanel((current) => (current === panel ? null : panel));
   const closePanel = () => setOpenPanel(null);
 
@@ -610,16 +543,7 @@ const ReelItem = ({ video, isVisible, socket }) => {
   };
 
   const handleSend = () => {
-    const q = input.trim();
-    if (!q || answering || !socket || socket.readyState !== WebSocket.OPEN) return;
-    setMessages((prev) => [...prev, { role: "user", text: q }]);
-    setInput("");
-    setAnswering(true);
-    socket.send(JSON.stringify({
-      websocket_type: "ask_question",
-      video_id: video.id,
-      question: q,
-    }));
+    if (askQuestion(input)) setInput("");
   };
 
   return (
@@ -810,42 +734,10 @@ const ReelItem = ({ video, isVisible, socket }) => {
 };
 
 const ReelsFeed = ({ socket }) => {
-  const [videos, setVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { videos, loading } = useVideoLibrary(socket);
   const [visibleIdx, setVisibleIdx] = useState(0);
   const containerRef = useRef(null);
   const itemRefs = useRef([]);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleMessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.websocket_type === "list_videos") {
-          setVideos(data.videos || []);
-          setLoading(false);
-        }
-      } catch (e) {}
-    };
-
-    const sendRequest = () => {
-      socket.send(JSON.stringify({ websocket_type: "list_videos" }));
-    };
-
-    socket.addEventListener("message", handleMessage);
-
-    if (socket.readyState === WebSocket.OPEN) {
-      sendRequest();
-    } else {
-      socket.addEventListener("open", sendRequest);
-    }
-
-    return () => {
-      socket.removeEventListener("message", handleMessage);
-      socket.removeEventListener("open", sendRequest);
-    };
-  }, [socket]);
 
   useEffect(() => {
     if (!videos.length) return;

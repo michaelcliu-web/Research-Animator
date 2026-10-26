@@ -1,9 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-import { mediaUrl, uploadPaper } from "../config/api";
+import { mediaUrl } from "../config/api";
 import {
-  DEFAULT_SKILL_LEVEL,
   EXAMPLE_PAPERS,
   GENERATION_STAGES,
   SKILL_LEVELS,
@@ -11,6 +10,7 @@ import {
 } from "../config/constants";
 import usePaperChat from "../hooks/usePaperChat";
 import useQuiz from "../hooks/useQuiz";
+import useVideoGeneration from "../hooks/useVideoGeneration";
 import useVideoLibrary from "../hooks/useVideoLibrary";
 import CollapsibleCard from "./common/CollapsibleCard";
 import LoadingSpinner from "./common/LoadingSpinner";
@@ -136,7 +136,18 @@ const PaperModal = ({ pdfUrl, onClose }) => {
   );
 };
 
-const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, quiz, suggestedPapers, onReset, onFileSelect, uploading, skillLevel, setSkillLevel }) => {
+const DashboardView = ({
+  stage,
+  pdfUrl,
+  streamingText,
+  result,
+  uploading,
+  skillLevel,
+  onSkillLevelChange,
+  onFileSelect,
+  onReset,
+}) => {
+  const { videoUrl, keyTakeaways, quiz, suggestedPapers } = result;
   const textEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const [showPaperModal, setShowPaperModal] = useState(false);
@@ -215,7 +226,7 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
               {SKILL_LEVELS.map(({ value, label }) => (
                 <button
                   key={value}
-                  onClick={() => setSkillLevel(value)}
+                  onClick={() => onSkillLevelChange(value)}
                   className={`px-4 py-1.5 transition-colors ${
                     skillLevel === value
                       ? "bg-indigo-600 text-white font-semibold"
@@ -803,97 +814,8 @@ const ReelsFeed = ({ socket }) => {
 };
 
 const Content = ({ socket, selectedMode, getToken }) => {
-  const [uploading, setUploading] = useState(false);
-  const [stage, setStage] = useState("");
-  const [pdfUrl, setPdfUrl] = useState("");
-  const [streamingText, setStreamingText] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
-  const [keyTakeaways, setKeyTakeaways] = useState([]);
-  const [quiz, setQuiz] = useState([]);
-  const [suggestedPapers, setSuggestedPapers] = useState([]);
-  const [skillLevel, setSkillLevel] = useState(DEFAULT_SKILL_LEVEL);
-
-  const handleSocketMessage = useCallback((event) => {
-    try {
-      const data = JSON.parse(event.data);
-      if (data.type === "pong") return;
-      if (data.websocket_type !== "generate_video") return;
-
-      if (data.status === "DONE") {
-        setVideoUrl(data.video_url);
-        setKeyTakeaways(data.key_takeaways || []);
-        setQuiz(data.quiz || []);
-        setSuggestedPapers(data.suggested_papers || []);
-        setStage("done");
-      } else if (data.status === "error") {
-        setStage("");
-        toast.error("Video generation failed: " + (data.message || "Unknown error"));
-      } else if (data.status === "parsing_pdf") {
-        setStage("parsing_pdf");
-        if (data.pdf_url) setPdfUrl(data.pdf_url);
-      } else if (data.status === "summarizing") {
-        setStage("summarizing");
-        if (data.chunk) setStreamingText((prev) => prev + data.chunk);
-      } else if (data.status === "summarizing_done") {
-        setStage("summarizing_done");
-      } else if (data.status === "generating_storyboard") {
-        setStage("generating_storyboard");
-      } else if (data.status === "storyboard_done") {
-        setStage("generating_storyboard");
-      } else if (data.status === "processing_scene") {
-        setStage("processing_scene");
-      } else if (data.status === "concatenating") {
-        setStage("concatenating");
-      } else {
-        setStage(data.status);
-      }
-    } catch (e) {
-      // ignore
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!socket) return;
-    socket.addEventListener("message", handleSocketMessage);
-    return () => socket.removeEventListener("message", handleSocketMessage);
-  }, [socket, handleSocketMessage]);
-
-  const handleFileSelect = async (file) => {
-    setUploading(true);
-    setStage("");
-    setStreamingText("");
-    setPdfUrl("");
-    setVideoUrl("");
-    setKeyTakeaways([]);
-    setQuiz([]);
-    setSuggestedPapers([]);
-
-    try {
-      const paper_id = await uploadPaper(file, await getToken());
-
-      if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ websocket_type: "generate_video", paper_id, skill_level: skillLevel }));
-        setStage("parsing_pdf");
-      } else {
-        toast.error("WebSocket not connected. Please refresh and try again.");
-      }
-    } catch (err) {
-      console.error("Upload error:", err);
-      toast.error("Failed to upload paper. Please try again.");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleReset = () => {
-    setVideoUrl("");
-    setKeyTakeaways([]);
-    setQuiz([]);
-    setSuggestedPapers([]);
-    setStage("");
-    setStreamingText("");
-    setPdfUrl("");
-  };
+  // Lives here (not in DashboardView) so a run in progress survives switching tabs.
+  const generation = useVideoGeneration(socket, getToken);
 
   if (selectedMode === "feed") {
     return <ReelsFeed socket={socket} />;
@@ -961,18 +883,15 @@ const Content = ({ socket, selectedMode, getToken }) => {
 
   return (
     <DashboardView
-      stage={stage}
-      pdfUrl={pdfUrl}
-      streamingText={streamingText}
-      videoUrl={videoUrl}
-      keyTakeaways={keyTakeaways}
-      quiz={quiz}
-      suggestedPapers={suggestedPapers}
-      onReset={handleReset}
-      onFileSelect={handleFileSelect}
-      uploading={uploading}
-      skillLevel={skillLevel}
-      setSkillLevel={setSkillLevel}
+      stage={generation.stage}
+      pdfUrl={generation.pdfUrl}
+      streamingText={generation.streamingText}
+      result={generation.result}
+      uploading={generation.uploading}
+      skillLevel={generation.skillLevel}
+      onSkillLevelChange={generation.setSkillLevel}
+      onFileSelect={generation.startGeneration}
+      onReset={generation.reset}
     />
   );
 };

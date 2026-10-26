@@ -7,7 +7,6 @@ const Left = ({
   setSelectedMode,
   sidebarCollapsed,
   setSidebarCollapsed,
-  subscriptionData,
 }) => {
   const [showMobileNav, setShowMobileNav] = useState(false);
 
@@ -31,7 +30,6 @@ const Left = ({
         setSelectedMode={setSelectedMode}
         sidebarCollapsed={isCollapsed}
         setSidebarCollapsed={setSidebarCollapsed}
-        subscriptionData={subscriptionData}
       />
 
       <div className="flex-grow" />

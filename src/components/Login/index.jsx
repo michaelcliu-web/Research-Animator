@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useSignIn } from "@clerk/clerk-react";
-import { Link } from "react-router-dom";
 
 const Login = () => {
   const { signIn } = useSignIn();
@@ -68,29 +67,6 @@ const Login = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-50 to-transparent transform -skew-x-12 translate-x-full group-hover:translate-x-[-200%] transition-transform duration-700"></div>
               )}
             </button>
-          </div>
-
-          {/* Footer Links */}
-          <div className="mt-12 flex justify-center space-x-6 text-sm">
-            <Link
-              to="/privacypolicy"
-              className="transition-colors duration-200"
-              style={{ color: "#00356b" }}
-              onMouseOver={(e) => (e.target.style.color = "#0f4d92")}
-              onMouseOut={(e) => (e.target.style.color = "#00356b")}
-            >
-              Privacy Policy
-            </Link>
-            <span className="text-gray-300">|</span>
-            <Link
-              to="/termsofservice"
-              className="transition-colors duration-200"
-              style={{ color: "#00356b" }}
-              onMouseOver={(e) => (e.target.style.color = "#0f4d92")}
-              onMouseOut={(e) => (e.target.style.color = "#00356b")}
-            >
-              Terms of Service
-            </Link>
           </div>
         </div>
       </div>

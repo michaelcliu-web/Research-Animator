@@ -1,28 +1,21 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import axios from "axios";
-import Cookies from "universal-cookie";
 import toast from "react-hot-toast";
-
-const cookies = new Cookies();
-
-const STAGES = [
-  { key: "parsing_pdf", label: "Reading paper" },
-  { key: "summarizing", label: "Understanding & simplifying" },
-  { key: "generating_storyboard", label: "Planning scenes" },
-  { key: "processing_scene", label: "Animating scenes" },
-  { key: "concatenating", label: "Assembling video" },
-  { key: "done", label: "Result" },
-];
-
-const API_BASE = process.env.REACT_APP_API_URL?.replace("/api/", "") || "";
+import { mediaUrl, uploadPaper } from "../config/api";
+import {
+  DEFAULT_SKILL_LEVEL,
+  EXAMPLE_PAPERS,
+  GENERATION_STAGES,
+  SKILL_LEVELS,
+  examplePaperUrl,
+} from "../config/constants";
 
 const StageIndicator = ({ currentStage }) => {
-  const currentIdx = STAGES.findIndex((s) => s.key === currentStage);
+  const currentIdx = GENERATION_STAGES.findIndex((s) => s.key === currentStage);
 
   return (
     <div className="flex items-center gap-2">
-      {STAGES.map((s, idx) => {
+      {GENERATION_STAGES.map((s, idx) => {
         const isDone = currentIdx >= 0 && idx < currentIdx;
         const isCurrent = s.key === currentStage || s.key + "_done" === currentStage;
         return (
@@ -37,7 +30,7 @@ const StageIndicator = ({ currentStage }) => {
                 {s.label}
               </span>
             </div>
-            {idx < STAGES.length - 1 && (
+            {idx < GENERATION_STAGES.length - 1 && (
               <div className={`w-6 h-px flex-shrink-0 ${isDone ? "bg-green-300" : "bg-gray-200"}`} />
             )}
           </React.Fragment>
@@ -52,7 +45,7 @@ const PaperModal = ({ pdfUrl, onClose }) => {
 
   useEffect(() => {
     let revoke = null;
-    fetch(API_BASE + pdfUrl)
+    fetch(mediaUrl(pdfUrl))
       .then((res) => res.blob())
       .then((blob) => {
         const url = URL.createObjectURL(blob);
@@ -90,19 +83,6 @@ const PaperModal = ({ pdfUrl, onClose }) => {
   );
 };
 
-const EXAMPLE_PAPERS = [
-  { file: "PageRankBringingOrdertotheWeb.pdf", title: "PageRank", authors: "Page & Brin, 1998" },
-  { file: "NIPS-2017-attention-is-all-you-need-Paper.pdf", title: "Attention Is All You Need", authors: "Vaswani et al., 2017" },
-  { file: "MagicNumberSeven-Miller1956.pdf", title: "The Magical Number Seven", authors: "Miller, 1956" },
-  { file: "Dunning_Kruger_Effect.pdf", title: "Dunning-Kruger Effect", authors: "Kruger & Dunning, 1999" },
-  { file: "Kahneman_Tversky_1979_Prospect_theory.pdf", title: "Prospect Theory", authors: "Kahneman & Tversky, 1979" },
-  { file: "playingatariwithdeepreinforcementlearning.pdf", title: "Deep Reinforcement Learning", authors: "Mnih et al., 2013" },
-  { file: "nikola-bregovic-entry_tcm18-225169.pdf", title: "The Mpemba Effect", authors: "Bregović" },
-  { file: "1953-nature-papers-watson-crick-wilkins-franklin.pdf", title: "DNA Double Helix", authors: "Watson & Crick, 1953" },
-  { file: "einstein1905_photoeff.pdf", title: "Photoelectric Effect", authors: "Einstein, 1905" },
-  { file: "science.239.4843.992.pdf", title: "High-Temp Superconductors", authors: "Wu et al., 1987" },
-];
-
 const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, quiz, suggestedPapers, onReset, onFileSelect, uploading, skillLevel, setSkillLevel }) => {
   const textEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -120,7 +100,7 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
     if (uploading || loadingExample) return;
     setLoadingExample(paper.file);
     try {
-      const res = await fetch(`/research-paper-examples/${paper.file}`);
+      const res = await fetch(examplePaperUrl(paper.file));
       const blob = await res.blob();
       const file = new File([blob], paper.file, { type: "application/pdf" });
       onFileSelect(file);
@@ -187,11 +167,7 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-gray-500">Explanation level</span>
             <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
-              {[
-                { value: "5th_grade", label: "5th Grade" },
-                { value: "10th_grade", label: "10th Grade" },
-                { value: "college", label: "College+" },
-              ].map(({ value, label }) => (
+              {SKILL_LEVELS.map(({ value, label }) => (
                 <button
                   key={value}
                   onClick={() => setSkillLevel(value)}
@@ -263,7 +239,7 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
                 >
                   <div className="relative bg-gray-100 overflow-hidden" style={{ height: "180px" }}>
                     <iframe
-                      src={`/research-paper-examples/${paper.file}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                      src={`${examplePaperUrl(paper.file)}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                       title={paper.title}
                       className="w-[200%] h-[200%] origin-top-left pointer-events-none"
                       style={{ transform: "scale(0.5)" }}
@@ -300,7 +276,7 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
               <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse" />
               <span className="text-sm font-medium text-gray-600">Reading paper...</span>
             </div>
-            <iframe src={API_BASE + pdfUrl} title="Research Paper" className="w-full h-full" style={{ height: "calc(70vh - 40px)" }} />
+            <iframe src={mediaUrl(pdfUrl)} title="Research Paper" className="w-full h-full" style={{ height: "calc(70vh - 40px)" }} />
           </motion.div>
         )}
 
@@ -312,7 +288,7 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
           >
             <div className="bg-black rounded-2xl overflow-hidden shadow-lg" style={{ width: "min(100%, 360px)", aspectRatio: "9/16" }}>
               <video
-                src={API_BASE + videoUrl}
+                src={mediaUrl(videoUrl)}
                 controls
                 autoPlay
                 className="w-full h-full object-contain"
@@ -320,7 +296,7 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
             </div>
             <div className="flex gap-3 mt-4 justify-center">
               <a
-                href={API_BASE + videoUrl}
+                href={mediaUrl(videoUrl)}
                 download
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm"
               >
@@ -625,7 +601,7 @@ const VideoHistory = ({ socket }) => {
                 >
                   {playingVideo === video.id ? (
                     <video
-                      src={API_BASE + video.video_url}
+                      src={mediaUrl(video.video_url)}
                       preload="auto"
                       controls
                       autoPlay
@@ -633,7 +609,7 @@ const VideoHistory = ({ socket }) => {
                     />
                   ) : video.thumbnail_url ? (
                     <img
-                      src={API_BASE + video.thumbnail_url}
+                      src={mediaUrl(video.thumbnail_url)}
                       alt={video.title}
                       className="w-full h-full object-contain"
                     />
@@ -659,7 +635,7 @@ const VideoHistory = ({ socket }) => {
                     <p className="text-xs text-gray-500 mt-2 line-clamp-2">{video.summary}</p>
                   )}
                   <a
-                    href={API_BASE + video.video_url}
+                    href={mediaUrl(video.video_url)}
                     download
                     className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-indigo-600 hover:text-indigo-700"
                     onClick={(e) => e.stopPropagation()}
@@ -900,7 +876,7 @@ const ReelItem = ({ video, isVisible, socket }) => {
       >
         <video
           ref={videoRef}
-          src={API_BASE + video.video_url}
+          src={mediaUrl(video.video_url)}
           loop
           muted={muted}
           playsInline
@@ -969,7 +945,7 @@ const ReelItem = ({ video, isVisible, socket }) => {
           )}
         </button>
         <a
-          href={API_BASE + video.video_url}
+          href={mediaUrl(video.video_url)}
           download
           className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
           onClick={(e) => e.stopPropagation()}
@@ -1229,7 +1205,7 @@ const Content = ({ socket, selectedMode, getToken }) => {
   const [keyTakeaways, setKeyTakeaways] = useState([]);
   const [quiz, setQuiz] = useState([]);
   const [suggestedPapers, setSuggestedPapers] = useState([]);
-  const [skillLevel, setSkillLevel] = useState("college");
+  const [skillLevel, setSkillLevel] = useState(DEFAULT_SKILL_LEVEL);
 
   const handleSocketMessage = useCallback((event) => {
     try {
@@ -1287,22 +1263,7 @@ const Content = ({ socket, selectedMode, getToken }) => {
     setSuggestedPapers([]);
 
     try {
-      const formData = new FormData();
-      formData.append("pdf_file", file);
-
-      const token = getToken ? await getToken() : cookies.get("token");
-      const res = await axios.post(
-        process.env.REACT_APP_API_URL + "papers/upload/",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: "Bearer " + token,
-          },
-        }
-      );
-
-      const { paper_id } = res.data;
+      const paper_id = await uploadPaper(file, await getToken());
 
       if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ websocket_type: "generate_video", paper_id, skill_level: skillLevel }));

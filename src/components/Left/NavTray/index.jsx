@@ -1,14 +1,11 @@
 import { useClerk } from "@clerk/clerk-react";
-import Cookies from "universal-cookie";
 import { useState } from "react";
 
 const NavTray = ({ selectedMode, setSelectedMode }) => {
   const { signOut } = useClerk();
-  const cookies = new Cookies();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogout = () => {
-    cookies.remove("token");
     signOut();
   };
 

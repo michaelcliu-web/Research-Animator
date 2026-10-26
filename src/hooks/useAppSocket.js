@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as Sentry from "@sentry/react";
-import Cookies from "universal-cookie";
 import { WS_URL } from "../config/api";
-
-const cookies = new Cookies();
 
 const INITIAL_RETRY_DELAY_MS = 1000;
 const MAX_RETRY_DELAY_MS = 15000;
@@ -36,7 +33,6 @@ const useAppSocket = ({ isSignedIn, getToken }) => {
     try {
       const token = await getToken();
       if (!token || unmounted.current) return;
-      cookies.set("token", token, { path: "/" });
 
       const ws = new WebSocket(WS_URL + "ws/app/?token=" + token);
 
@@ -74,10 +70,7 @@ const useAppSocket = ({ isSignedIn, getToken }) => {
     if (!isSignedIn) return;
     getToken()
       .then((token) => {
-        if (token) {
-          cookies.set("token", token, { path: "/" });
-          setHasToken(true);
-        }
+        if (token) setHasToken(true);
       })
       .catch((error) => Sentry.captureException(error));
   }, [isSignedIn, getToken]);

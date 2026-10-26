@@ -103,9 +103,8 @@ const EXAMPLE_PAPERS = [
   { file: "science.239.4843.992.pdf", title: "High-Temp Superconductors", authors: "Wu et al., 1987" },
 ];
 
-const DashboardView = ({ stage, pdfUrl, streamingText, streamingCode, videoUrl, summary, keyTakeaways, quiz, suggestedPapers, onReset, onFileSelect, uploading, skillLevel, setSkillLevel }) => {
+const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, quiz, suggestedPapers, onReset, onFileSelect, uploading, skillLevel, setSkillLevel }) => {
   const textEndRef = useRef(null);
-  const codeEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const [showPaperModal, setShowPaperModal] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -136,16 +135,11 @@ const DashboardView = ({ stage, pdfUrl, streamingText, streamingCode, videoUrl, 
     if (textEndRef.current) textEndRef.current.scrollIntoView({ behavior: "smooth" });
   }, [streamingText]);
 
-  useEffect(() => {
-    if (codeEndRef.current) codeEndRef.current.scrollIntoView({ behavior: "smooth" });
-  }, [streamingCode]);
-
   const isIdle = !stage;
   const showPdf = stage === "parsing_pdf";
   const showSummary = stage === "summarizing" || stage === "summarizing_done" ||
     stage === "generating_storyboard" || stage === "processing_scene" ||
     stage === "concatenating" || stage === "done";
-  const showCode = false;
   const showSpinner = stage === "processing_scene" || stage === "concatenating";
   const showResult = stage === "done";
 
@@ -519,33 +513,6 @@ const DashboardView = ({ stage, pdfUrl, streamingText, streamingCode, videoUrl, 
                 <div ref={textEndRef} />
               </div>
             </motion.div>
-
-            {showCode && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-gray-900 rounded-2xl shadow-sm border border-gray-700 overflow-hidden flex flex-col"
-                style={{ maxHeight: "50vh" }}
-              >
-                <div className="bg-gray-800 px-4 py-2 border-b border-gray-700 flex items-center gap-2 flex-shrink-0">
-                  {stage === "generating_animation" ? (
-                    <div className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-pulse" />
-                  ) : (
-                    <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                  <span className="text-sm font-medium text-gray-300">Manim Animation Code</span>
-                  <span className="text-xs text-gray-500 ml-auto">Claude Opus</span>
-                </div>
-                <div className="p-4 overflow-y-auto flex-1">
-                  <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">
-                    {streamingCode || <span className="text-gray-500 animate-pulse">Generating animation...</span>}
-                  </pre>
-                  <div ref={codeEndRef} />
-                </div>
-              </motion.div>
-            )}
           </div>
         )}
 
@@ -559,12 +526,8 @@ const DashboardView = ({ stage, pdfUrl, streamingText, streamingCode, videoUrl, 
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            <p className="text-gray-600 font-medium">
-              {stage === "generating_narration" ? "Generating narration with ElevenLabs..." : "Rendering Manim animation..."}
-            </p>
-            <p className="text-gray-400 text-sm mt-1">
-              {stage === "generating_narration" ? "Adding voiceover to your video" : "This may take a minute"}
-            </p>
+            <p className="text-gray-600 font-medium">Rendering Manim animation...</p>
+            <p className="text-gray-400 text-sm mt-1">This may take a minute</p>
           </motion.div>
         )}
       </div>
@@ -1262,9 +1225,7 @@ const Content = ({ socket, selectedMode, getToken }) => {
   const [stage, setStage] = useState("");
   const [pdfUrl, setPdfUrl] = useState("");
   const [streamingText, setStreamingText] = useState("");
-  const [streamingCode, setStreamingCode] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
-  const [summary, setSummary] = useState("");
   const [keyTakeaways, setKeyTakeaways] = useState([]);
   const [quiz, setQuiz] = useState([]);
   const [suggestedPapers, setSuggestedPapers] = useState([]);
@@ -1278,7 +1239,6 @@ const Content = ({ socket, selectedMode, getToken }) => {
 
       if (data.status === "DONE") {
         setVideoUrl(data.video_url);
-        setSummary(data.summary || "");
         setKeyTakeaways(data.key_takeaways || []);
         setQuiz(data.quiz || []);
         setSuggestedPapers(data.suggested_papers || []);
@@ -1320,9 +1280,7 @@ const Content = ({ socket, selectedMode, getToken }) => {
     setUploading(true);
     setStage("");
     setStreamingText("");
-    setStreamingCode("");
     setPdfUrl("");
-    setSummary("");
     setVideoUrl("");
     setKeyTakeaways([]);
     setQuiz([]);
@@ -1362,13 +1320,11 @@ const Content = ({ socket, selectedMode, getToken }) => {
 
   const handleReset = () => {
     setVideoUrl("");
-    setSummary("");
     setKeyTakeaways([]);
     setQuiz([]);
     setSuggestedPapers([]);
     setStage("");
     setStreamingText("");
-    setStreamingCode("");
     setPdfUrl("");
   };
 
@@ -1443,9 +1399,7 @@ const Content = ({ socket, selectedMode, getToken }) => {
       stage={stage}
       pdfUrl={pdfUrl}
       streamingText={streamingText}
-      streamingCode={streamingCode}
       videoUrl={videoUrl}
-      summary={summary}
       keyTakeaways={keyTakeaways}
       quiz={quiz}
       suggestedPapers={suggestedPapers}

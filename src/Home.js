@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useAuth } from "@clerk/clerk-react";
 import Spinner from "./components/Spinner";
 import Login from "./components/Login";
 import Content from "./components/Content";
@@ -11,7 +11,6 @@ const cookies = new Cookies();
 
 const Home = () => {
   const { isSignedIn, isLoaded, getToken } = useAuth();
-  const { user } = useUser();
 
   const [gotToken, setGotToken] = useState(false);
   const [socket, setSocket] = useState(null);
@@ -82,7 +81,7 @@ const Home = () => {
         })
         .catch((error) => Sentry.captureException(error));
     }
-  }, [isSignedIn]);
+  }, [isSignedIn, getToken]);
 
   useEffect(() => {
     if (gotToken && process.env.REACT_APP_WS_URL) {

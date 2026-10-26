@@ -43,7 +43,7 @@ export const SummaryPanel = ({ text, isStreaming }) => {
             <CheckIcon className="w-4 h-4 text-green-600" />
           )}
           <span className="text-sm font-medium text-gray-600">Paper Summary</span>
-          <span className="text-xs text-gray-400 ml-auto">Gemini Flash</span>
+          <span className="text-xs text-gray-400 ml-auto">Claude Haiku</span>
         </div>
         <div className="p-4 overflow-y-auto flex-1 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
           {text || <span className="text-gray-400 animate-pulse">Analyzing paper...</span>}

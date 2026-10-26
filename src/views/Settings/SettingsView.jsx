@@ -3,7 +3,7 @@ import { UserIcon } from "../../components/common/Icons";
 const ABOUT_ROWS = [
   ["App", "Reel Research"],
   ["Animation engine", "Manim (3Blue1Brown)"],
-  ["Summary model", "Gemini Flash"],
+  ["Summary model", "Claude Haiku"],
   ["Animation model", "Claude Opus"],
   ["Narration", "ElevenLabs TTS"],
   ["Video format", "9:16 vertical (Reels / Shorts)"],

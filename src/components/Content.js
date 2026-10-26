@@ -9,6 +9,26 @@ import {
   SKILL_LEVELS,
   examplePaperUrl,
 } from "../config/constants";
+import LoadingSpinner from "./common/LoadingSpinner";
+import {
+  BookOpenIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  ClipboardCheckIcon,
+  CloseIcon,
+  DocumentIcon,
+  DocumentUploadIcon,
+  DownloadIcon,
+  FilmIcon,
+  PlayIcon,
+  QuestionIcon,
+  QuizIcon,
+  SendIcon,
+  SpeakerIcon,
+  SpeakerMutedIcon,
+  UserIcon,
+  VideoCameraIcon,
+} from "./common/Icons";
 
 const StageIndicator = ({ currentStage }) => {
   const currentIdx = GENERATION_STAGES.findIndex((s) => s.key === currentStage);
@@ -63,19 +83,14 @@ const PaperModal = ({ pdfUrl, onClose }) => {
         <div className="bg-gray-100 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
           <span className="text-sm font-medium text-gray-700">Original Research Paper</span>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-200 transition-colors">
-            <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <CloseIcon className="w-5 h-5 text-gray-500" />
           </button>
         </div>
         {blobUrl ? (
           <iframe src={blobUrl + "#toolbar=0&navpanes=0&scrollbar=1"} title="Research Paper" className="w-full" style={{ height: "calc(85vh - 48px)" }} />
         ) : (
           <div className="flex items-center justify-center" style={{ height: "calc(85vh - 48px)" }}>
-            <svg className="animate-spin h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
+            <LoadingSpinner className="h-8 w-8 text-indigo-600" />
           </div>
         )}
       </div>
@@ -151,9 +166,7 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
               onClick={() => setShowPaperModal(true)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-              </svg>
+              <DocumentIcon className="w-4 h-4" />
               View Paper
             </button>
           )}
@@ -204,16 +217,11 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
             />
             <div className="flex flex-col items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center">
-                <svg className="w-8 h-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                </svg>
+                <DocumentUploadIcon className="w-8 h-8 text-indigo-600" strokeWidth={1.5} />
               </div>
               {uploading ? (
                 <div className="flex items-center gap-2 text-gray-600">
-                  <svg className="animate-spin h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
+                  <LoadingSpinner className="h-5 w-5 text-indigo-600" />
                   Uploading...
                 </div>
               ) : (
@@ -248,10 +256,7 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
                     <div className="absolute inset-0 bg-transparent group-hover:bg-indigo-600/5 transition-colors" />
                     {loadingExample === paper.file && (
                       <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                        <svg className="animate-spin h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
+                        <LoadingSpinner className="h-6 w-6 text-indigo-600" />
                       </div>
                     )}
                   </div>
@@ -300,9 +305,7 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
                 download
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
+                <DownloadIcon className="w-4 h-4" />
                 Download
               </a>
               <button
@@ -326,12 +329,7 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
               className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors"
             >
               <span className="font-semibold text-gray-900 text-sm">Key Takeaways</span>
-              <svg
-                className={`w-4 h-4 text-gray-400 transition-transform ${takeawaysOpen ? "rotate-180" : ""}`}
-                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
+              <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${takeawaysOpen ? "rotate-180" : ""}`} />
             </button>
             {takeawaysOpen && (
               <div className="px-5 pb-5 space-y-3">
@@ -368,12 +366,7 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
                     {Object.entries(quizAnswers).filter(([i, a]) => a === quiz[i].answer).length}/{quiz.length} correct
                   </span>
                 )}
-                <svg
-                  className={`w-4 h-4 text-gray-400 transition-transform ${quizOpen ? "rotate-180" : ""}`}
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
+                <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${quizOpen ? "rotate-180" : ""}`} />
               </div>
             </button>
             {quizOpen && (
@@ -439,12 +432,7 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
               className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors"
             >
               <span className="font-semibold text-gray-900 text-sm">Read Next</span>
-              <svg
-                className={`w-4 h-4 text-gray-400 transition-transform ${suggestedOpen ? "rotate-180" : ""}`}
-                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
+              <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${suggestedOpen ? "rotate-180" : ""}`} />
             </button>
             {suggestedOpen && (
               <div className="px-5 pb-5 space-y-3">
@@ -477,9 +465,7 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
                 {stage === "summarizing" ? (
                   <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse" />
                 ) : (
-                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
+                  <CheckIcon className="w-4 h-4 text-green-600" />
                 )}
                 <span className="text-sm font-medium text-gray-600">Paper Summary</span>
                 <span className="text-xs text-gray-400 ml-auto">Gemini Flash</span>
@@ -498,10 +484,7 @@ const DashboardView = ({ stage, pdfUrl, streamingText, videoUrl, keyTakeaways, q
             animate={{ opacity: 1 }}
             className="mt-4 bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center"
           >
-            <svg className="animate-spin h-8 w-8 text-indigo-600 mx-auto mb-3" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
+            <LoadingSpinner className="h-8 w-8 text-indigo-600 mx-auto mb-3" />
             <p className="text-gray-600 font-medium">Rendering Manim animation...</p>
             <p className="text-gray-400 text-sm mt-1">This may take a minute</p>
           </motion.div>
@@ -565,10 +548,7 @@ const VideoHistory = ({ socket }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full min-h-[calc(100vh-2rem)] bg-gray-50">
-        <svg className="animate-spin h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-        </svg>
+        <LoadingSpinner className="h-8 w-8 text-indigo-600" />
       </div>
     );
   }
@@ -581,9 +561,7 @@ const VideoHistory = ({ socket }) => {
 
         {videos.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-            <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
+            <VideoCameraIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" strokeWidth={1.5} />
             <p className="text-gray-500 font-medium">No videos yet</p>
             <p className="text-sm text-gray-400 mt-1">Go to Dashboard to generate your first video</p>
           </div>
@@ -619,9 +597,7 @@ const VideoHistory = ({ socket }) => {
                   {playingVideo !== video.id && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-14 h-14 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center group-hover:bg-black/40 transition-colors">
-                        <svg className="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
+                        <PlayIcon className="w-7 h-7 text-white ml-1" />
                       </div>
                     </div>
                   )}
@@ -640,9 +616,7 @@ const VideoHistory = ({ socket }) => {
                     className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-indigo-600 hover:text-indigo-700"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
+                    <DownloadIcon className="w-3.5 h-3.5" />
                     Download
                   </a>
                 </div>
@@ -749,9 +723,7 @@ const ReelItem = ({ video, isVisible, socket }) => {
           <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
             <h4 className="text-sm font-semibold text-gray-800">Key Takeaways</h4>
             <button onClick={() => setTakeawaysOpen(false)} className="text-gray-400 hover:text-gray-600">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <CloseIcon className="w-4 h-4" />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
@@ -785,9 +757,7 @@ const ReelItem = ({ video, isVisible, socket }) => {
                 </span>
               )}
               <button onClick={() => setQuizOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <CloseIcon className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -847,9 +817,7 @@ const ReelItem = ({ video, isVisible, socket }) => {
           <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between flex-shrink-0">
             <h4 className="text-sm font-semibold text-gray-800">Read Next</h4>
             <button onClick={() => setSuggestedOpen(false)} className="text-gray-400 hover:text-gray-600">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <CloseIcon className="w-4 h-4" />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
@@ -919,9 +887,7 @@ const ReelItem = ({ video, isVisible, socket }) => {
         {paused && isVisible && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20">
             <div className="w-14 h-14 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-              <svg className="w-7 h-7 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
+              <PlayIcon className="w-7 h-7 text-white ml-0.5" />
             </div>
           </div>
         )}
@@ -934,14 +900,9 @@ const ReelItem = ({ video, isVisible, socket }) => {
           title={muted ? "Unmute" : "Mute"}
         >
           {muted ? (
-            <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-            </svg>
+            <SpeakerMutedIcon className="w-5 h-5 text-gray-700" />
           ) : (
-            <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-            </svg>
+            <SpeakerIcon className="w-5 h-5 text-gray-700" />
           )}
         </button>
         <a
@@ -951,9 +912,7 @@ const ReelItem = ({ video, isVisible, socket }) => {
           onClick={(e) => e.stopPropagation()}
           title="Download"
         >
-          <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
+          <DownloadIcon className="w-5 h-5 text-gray-700" />
         </a>
         {video.key_takeaways && video.key_takeaways.length > 0 && (
           <button
@@ -963,9 +922,7 @@ const ReelItem = ({ video, isVisible, socket }) => {
             }`}
             title="Key takeaways"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
+            <ClipboardCheckIcon className="w-5 h-5" />
           </button>
         )}
         {video.quiz && video.quiz.length > 0 && (
@@ -976,9 +933,7 @@ const ReelItem = ({ video, isVisible, socket }) => {
             }`}
             title="Knowledge check"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+            <QuizIcon className="w-5 h-5" />
           </button>
         )}
         {video.suggested_papers && video.suggested_papers.length > 0 && (
@@ -989,9 +944,7 @@ const ReelItem = ({ video, isVisible, socket }) => {
             }`}
             title="Read next"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
+            <BookOpenIcon className="w-5 h-5" />
           </button>
         )}
         <button
@@ -1001,9 +954,7 @@ const ReelItem = ({ video, isVisible, socket }) => {
           }`}
           title="Ask about this paper"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <QuestionIcon className="w-5 h-5" />
         </button>
       </div>
 
@@ -1020,18 +971,14 @@ const ReelItem = ({ video, isVisible, socket }) => {
               <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[240px]">{video.title || "Untitled"}</p>
             </div>
             <button onClick={() => setChatOpen(false)} className="text-gray-400 hover:text-gray-600">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <CloseIcon className="w-4 h-4" />
             </button>
           </div>
 
           <div ref={chatBodyRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3" onWheel={(e) => e.stopPropagation()}>
             {messages.length === 0 && (
               <div className="text-center py-8">
-                <svg className="w-10 h-10 text-gray-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <QuestionIcon className="w-10 h-10 text-gray-200 mx-auto mb-3" strokeWidth={1.5} />
                 <p className="text-sm text-gray-400">Ask anything about this paper</p>
                 <p className="text-xs text-gray-300 mt-1">e.g. "What method did they use?" or "Explain the results"</p>
               </div>
@@ -1072,14 +1019,9 @@ const ReelItem = ({ video, isVisible, socket }) => {
                 className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 {answering ? (
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
+                  <LoadingSpinner className="h-4 w-4" />
                 ) : (
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
+                  <SendIcon className="w-4 h-4" />
                 )}
               </button>
             </div>
@@ -1153,10 +1095,7 @@ const ReelsFeed = ({ socket }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
-        <svg className="animate-spin h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-        </svg>
+        <LoadingSpinner className="h-8 w-8 text-indigo-600" />
       </div>
     );
   }
@@ -1165,9 +1104,7 @@ const ReelsFeed = ({ socket }) => {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-center">
-          <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-          </svg>
+          <FilmIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" strokeWidth={1.5} />
           <p className="text-gray-500 font-medium">No videos in your feed</p>
           <p className="text-sm text-gray-400 mt-1">Generate a video from the Dashboard</p>
         </div>
@@ -1309,9 +1246,7 @@ const Content = ({ socket, selectedMode, getToken }) => {
               <h3 className="text-sm font-semibold text-gray-900 mb-4">Account</h3>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
-                  <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                  </svg>
+                  <UserIcon className="w-6 h-6 text-indigo-600" strokeWidth={1.5} />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-700 font-medium">Signed in via Clerk</p>

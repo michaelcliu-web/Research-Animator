@@ -4,6 +4,12 @@ Reel Research turns research papers into short animated explainer videos. Upload
 
 This repository is the React frontend. The video pipeline lives in the Django backend, [reel-research-backend](https://github.com/michaelcliu-web/reel-research-backend). The two talk over a single authenticated WebSocket, so generation progress and the summary stream into the dashboard as they happen.
 
+## Demo
+
+[![Reel Research demo](https://img.youtube.com/vi/B8U1VZfG6xk/maxresdefault.jpg)](https://www.youtube.com/watch?v=B8U1VZfG6xk)
+
+[Watch the demo on YouTube](https://www.youtube.com/watch?v=B8U1VZfG6xk)
+
 ## Getting Started
 
 These instructions will get a copy of the frontend running on your local machine for development and testing.
